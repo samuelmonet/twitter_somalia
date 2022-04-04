@@ -5,3 +5,4 @@ wordcloud==1.8.1
 streamlit_option_menu==0.3.2
 pandas==1.1.5
 Pillow==9.1.0
+click==7.1.2

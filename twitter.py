@@ -152,7 +152,7 @@ elif choose=='Drought':
         for j in i:
             places.append(j)
     if level == 'Village':
-        coordinates = pd.read_csv('../maps/P code.csv', decimal=',')
+        coordinates = pd.read_csv('maps/P code.csv', decimal=',')
         villages = pd.DataFrame.from_dict(Counter(places), orient='index').reset_index()
         villages.columns=['village','occurences']
         # st.write(villages)
