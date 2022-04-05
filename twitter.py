@@ -12,7 +12,6 @@ import re
 import geojson
 from dash_fonctions import *
 import pickle
-from st_aggrid import AgGrid
 
 
 st.set_page_config(layout="wide")
