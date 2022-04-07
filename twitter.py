@@ -103,7 +103,7 @@ else:
 
     positions = pd.DataFrame.from_dict(dico_positions, orient='index').reset_index()
     positions.columns = [level, 'occurences']
-    st.write(positions)
+    #st.write(positions)
         # st.write(data)
         # st.write(data['value'].max())
 
