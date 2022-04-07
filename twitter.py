@@ -115,7 +115,7 @@ else:
                             opacity=0.5,  # select projection
                             color_continuous_scale="icefire",  # select prefer color scale
                             featureidkey=feature_id_dico[level],
-                            range_color=[0, positions['occurences'].max()],  # select range of dataset
+                            range_color=[0, positions['occurences'].max()*1.1],  # select range of dataset
                             center={"lat": 4.5517, "lon": 45.7073},
                             zoom=5.5,width=700, height=1000,
                             )
