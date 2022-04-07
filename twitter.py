@@ -17,8 +17,8 @@ import pickle
 st.set_page_config(layout="wide")
 
 with st.sidebar:
-    choose = option_menu(None, ["Elections", "Drought"],
-                         icons=["envelope paper", 'sun'],
+    choose = option_menu(None, ["Elections", "Drought",'Security Incidents','Displacements'],
+                         icons=["envelope paper", 'sun','emoji angry fill','reply fill'],
                          menu_icon="app-indicator", default_index=0,
                         )
 
@@ -26,10 +26,16 @@ st.sidebar.title(choose)
 
 if choose == "Elections":
     st.sidebar.write('Elections')
-    data = pd.read_csv('Election_all.csv', sep='\t')
+    data = pd.read_csv('Election_all_noRT.csv', sep='\t')
 elif choose=='Drought':
     st.title("Tweets on drought")
-    data = pd.read_csv('Drought_all.csv', sep='\t')
+    data = pd.read_csv('Drought_all_noRT.csv', sep='\t')
+elif choose=='Displacements':
+    st.title("Tweets on displacements")
+    data = pd.read_csv('Displacements_all_noRT.csv', sep='\t')
+elif choose=='Security Incidents':
+    st.title("Tweets on security incidents")
+    data = pd.read_csv('Attacks_all_noRT.csv', sep='\t')
 else:
     data = pd.read_csv('test.csv', sep='\t')
 
