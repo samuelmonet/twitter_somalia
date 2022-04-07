@@ -18,7 +18,7 @@ st.set_page_config(layout="wide")
 
 with st.sidebar:
     choose = option_menu(None, ["Elections", "Drought",'Security Incidents','Displacements'],
-                         icons=["envelope paper", 'sun','emoji angry fill','reply fill'],
+                         icons=["envelope paper", 'sun','emoji angry','reply fill'],
                          menu_icon="app-indicator", default_index=0,
                         )
 
