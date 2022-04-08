@@ -26,7 +26,7 @@ st.sidebar.title(choose)
 
 if choose == "Elections":
     st.sidebar.write('Elections')
-    data = pd.read_csv('Election.csv', sep='\t')
+    data = pd.read_csv('Elections.csv', sep='\t')
 elif choose=='Drought':
     st.title("Tweets on drought")
     data = pd.read_csv('Drought.csv', sep='\t')
