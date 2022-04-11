@@ -33,14 +33,15 @@ elif choose=='Drought':
 elif choose=='Displacements':
     st.title("Tweets on displacements")
     data = pd.read_csv('Displacements.csv', sep='\t')
-elif choose=='Security Incidents':
+else:
     st.title("Tweets on security incidents")
     data = pd.read_csv('Attacks.csv', sep='\t')
-else:
-    data = pd.read_csv('test.csv', sep='\t')
 
-data['created_at'] = data['created_at'].apply(lambda x: x[:10])
-data['created_at'] = data['created_at'].apply(lambda x: pd.to_datetime(x))
+
+data['date'] = data['created_at'].apply(lambda x: x[:10])
+data['date'] = data['date'].apply(lambda x: pd.to_datetime(x))
+data['created_at'].apply(lambda x: pd.to_datetime(x))
+
 
 fig = draw_numbers(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]), data,
                        'Tweets per day')
@@ -67,6 +68,7 @@ if level == 'village':
         lambda x: coordinates[coordinates['NAME'] == x].iloc[0]['X_COORD'])
     positions['latitude'] = positions['village'].apply(
         lambda x: coordinates[coordinates['NAME'] == x].iloc[0]['Y_COORD'])
+
 
     carte = px.scatter_mapbox(positions, lat="latitude", lon="longitude", size='occurences',
                                   zoom=5.5, hover_name='village', hover_data=['occurences'],
@@ -103,7 +105,7 @@ else:
 
     positions = pd.DataFrame.from_dict(dico_positions, orient='index').reset_index()
     positions.columns = [level, 'occurences']
-    #st.write(positions)
+    st.write(positions)
         # st.write(data)
         # st.write(data['value'].max())
 
@@ -124,80 +126,100 @@ else:
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     st.plotly_chart(fig, use_container_width=True)
 
-if st.checkbox('Analyse specific locations'):
-    places=st.multiselect('Select '+level.capitalize()+'(s)', positions[level].unique())
-    df=data[data[level].apply(lambda x:len(x)>0)].copy()
-    places_df=pd.DataFrame(columns=data.columns)
-    for i in places:
-        places_df=places_df.append(df[df[level].apply(lambda x: i in x)])
+if st.checkbox('Look at tweets and/or specific locations'):
 
-    fig_places = draw_numbers(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]),
+    maintenant = datetime.datetime.now().date()
+    debut = datetime.date(year=2022,month=3,day=25)
+    values = st.slider(
+        'Select a range of time',
+        debut, maintenant, (debut, maintenant))
+    st.write('Values:', values)
+
+    df = data[(data['date'].apply(lambda x: x.date()) >= values[0]) &
+              (data['date'].apply(lambda x: x.date()) <= values[1])].copy()
+
+    places=st.multiselect('Select '+level.capitalize()+'(s)', positions[level].unique())
+    df=df[df[level].apply(lambda x:len(x)>0)].copy()
+
+    if places:
+        places_df=pd.DataFrame(columns=data.columns)
+        for i in places:
+            places_df=places_df.append(df[df[level].apply(lambda x : i in x)])
+    else:
+        places_df=df.copy()
+
+    st.dataframe(places_df[['created_at', 'text', 'Google_Translation', 'village', 'district', 'region']].\
+                 sort_values(by='created_at'))
+
+
+    fig_places = draw_numbers(pd.to_datetime(str(values[0])), pd.to_datetime(str(values[1])),
                            places_df, 'Tweets per day mentionning places in '+ ' or '.join(places))
     st.plotly_chart(fig_places, use_container_width=True)
 
-    st.title('Wordclouds for tweets mentioning locations in '+ ' or '.join(places))
-    col1,col2=st.columns((1,1))
-    sw = STOPWORDS
-    sw.add('t')
-    sw.add('https')
-    sw.add('co')
-    sw.add('rt')
+    if st.checkbox('Displaay Wordclouds'):
 
-    corpus = ' '.join(places_df[places_df['Google_Translation'].isna()]['text'])
-    corpus = re.sub('[^A-Za-z ]', ' ', corpus)
-    corpus = re.sub('\s+', ' ', corpus)
-    corpus = corpus.lower()
-    col1.subheader('English Tweets')
-    col1.subheader('')
-    col1.subheader('')
-    col1.write('')
-    col1.caption('')
-    col1.caption('')
-    sw2 = col1.multiselect('Select words you would like to remove from the wordclouds \n\n',
-                               [i[0] for i in Counter(corpus.split(' ')).most_common() if i[0] not in sw][:20])
+        st.title('Wordclouds for tweets mentioning locations in '+ ' or '.join(places))
+        col1,col2=st.columns((1,1))
+        sw = STOPWORDS
+        sw.add('t')
+        sw.add('https')
+        sw.add('co')
+        sw.add('rt')
 
-    for i in sw2:
-        sw.add(i)
+        corpus = ' '.join(places_df[places_df['Google_Translation'].isna()]['text'])
+        corpus = re.sub('[^A-Za-z ]', ' ', corpus)
+        corpus = re.sub('\s+', ' ', corpus)
+        corpus = corpus.lower()
+        col1.subheader('English Tweets')
+        col1.subheader('')
+        col1.subheader('')
+        col1.write('')
+        col1.caption('')
+        col1.caption('')
+        sw2 = col1.multiselect('Select words you would like to remove from the wordclouds \n\n',
+                                   [i[0] for i in Counter(corpus.split(' ')).most_common() if i[0] not in sw][:20])
 
-    if corpus == ' ' or corpus == '':
-        corpus = 'Nothing_to_display'
-    else:
-        corpus = ' '.join([i for i in corpus.split(' ') if i not in sw])
-    wc = WordCloud(background_color="#0E1117", repeat=False, mask=mask)
-    wc.generate(corpus)
-    col1.image(wc.to_array(), use_column_width=True)
+        for i in sw2:
+            sw.add(i)
 
-    col2.subheader('Somali Tweets')
-    langue = col2.radio("Choose your language",('English','Somali'))
-    if langue == 'Somali':
-        sw_som = STOPWORDS
-        corpus2 = ' '.join(places_df[~(places_df['Google_Translation'].isna())]['Google_Translation'])
-    else:
-        sw_som=set()
-        corpus2 = ' '.join(places_df[~(places_df['Google_Translation'].isna())]['text'])
-    corpus2 = re.sub('[^A-Za-z ]', ' ', corpus2)
-    corpus2 = re.sub('\s+', ' ', corpus2)
-    corpus2 = corpus2.lower()
+        if corpus == ' ' or corpus == '':
+            corpus = 'Nothing_to_display'
+        else:
+            corpus = ' '.join([i for i in corpus.split(' ') if i not in sw])
+        wc = WordCloud(background_color="#0E1117", repeat=False, mask=mask)
+        wc.generate(corpus)
+        col1.image(wc.to_array(), use_column_width=True)
 
-    sw_som.add('t')
-    sw_som.add('https')
-    sw_som.add('co')
-    sw_som.add('rt')
-    sw_som2 = col2.multiselect('Select words you would like to remove from these wordclouds',
-                            [i[0] for i in Counter(corpus2.split(' ')).most_common() if i[0] not in sw_som][:20])
-    for i in sw_som2:
-        sw_som.add(i)
-    if corpus2 == ' ' or corpus2 == '':
-        corpus2 = 'Nothing_to_display'
-    else:
-        corpus2 = ' '.join([i for i in corpus2.split(' ') if i not in sw_som])
+        col2.subheader('Somali Tweets')
+        langue = col2.radio("Choose your language",('English','Somali'))
+        if langue == 'Somali':
+            sw_som = STOPWORDS
+            corpus2 = ' '.join(places_df[~(places_df['Google_Translation'].isna())]['Google_Translation'])
+        else:
+            sw_som=set()
+            corpus2 = ' '.join(places_df[~(places_df['Google_Translation'].isna())]['text'])
+        corpus2 = re.sub('[^A-Za-z ]', ' ', corpus2)
+        corpus2 = re.sub('\s+', ' ', corpus2)
+        corpus2 = corpus2.lower()
 
-    wc2 = WordCloud(background_color="#0E1117", repeat=False, mask=mask)
-    wc2.generate(corpus2)
-    col2.image(wc2.to_array(), use_column_width=True)
+        sw_som.add('t')
+        sw_som.add('https')
+        sw_som.add('co')
+        sw_som.add('rt')
+        sw_som2 = col2.multiselect('Select words you would like to remove from these wordclouds',
+                                [i[0] for i in Counter(corpus2.split(' ')).most_common() if i[0] not in sw_som][:20])
+        for i in sw_som2:
+            sw_som.add(i)
+        if corpus2 == ' ' or corpus2 == '':
+            corpus2 = 'Nothing_to_display'
+        else:
+            corpus2 = ' '.join([i for i in corpus2.split(' ') if i not in sw_som])
 
-if st.checkbox('Display Tweets'):
-    st.table(places_df[['created_at','text','Google_Translation','village','district','region']])
+        wc2 = WordCloud(background_color="#0E1117", repeat=False, mask=mask)
+        wc2.generate(corpus2)
+        col2.image(wc2.to_array(), use_column_width=True)
+
+
 
 
 
