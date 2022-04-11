@@ -4,14 +4,20 @@ import datetime
 
 def draw_numbers(since, until, df, titre):
     d = df.groupby('date').aggregate({'date': 'count'})
+    d_eng=df[df['Google_Translation'].isna()].groupby('date').aggregate({'date': 'count'})
+    d_som=df[-(df['Google_Translation'].isna())].groupby('date').aggregate({'date': 'count'})
     # st.write(d)
     legend, tickes = echelle(since, until)
     X = [k for k in daterange(since, until)]
     x = [str(k) for k in daterange(since, until)]
     y = [d.loc[i].values[0] if i in d.index else 0 for i in x]
+    y_eng= [d_eng.loc[i].values[0] if i in d_eng.index else 0 for i in x]
+    y_som= [d_som.loc[i].values[0] if i in d_som.index else 0 for i in x]
     # st.write(y)
-    fig = go.Figure(go.Bar(name='Tweets per day', x=X, y=y))
-    fig.add_trace(go.Scatter(name='Week mean number', x=X, y=moyenne(y), mode='lines'))
+    fig = go.Figure(go.Bar(name='Tweets in English per day', x=X, y=y_eng))
+    fig.add_trace(go.Bar(name='Tweets in Somali per day', x=X, y=y_som))
+    fig.update_layout(barmode='stack')
+    fig.add_trace(go.Scatter(name='Total week mean number', x=X, y=moyenne(y), mode='lines'))
 
     # fig.update_layout(autosize=True,legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="center",x=0.5))
     # fig.update_xaxes(ticktext=legend,tickvals=tickes)
