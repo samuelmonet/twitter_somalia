@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import datetime
 
 def draw_numbers(since, until, df, titre):
-    d = df.groupby('created_at').aggregate({'created_at': 'count'})
+    d = df.groupby('date').aggregate({'date': 'count'})
     # st.write(d)
     legend, tickes = echelle(since, until)
     X = [k for k in daterange(since, until)]
