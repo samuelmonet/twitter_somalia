@@ -1,6 +1,92 @@
 import numpy as np
 import plotly.graph_objects as go
 import datetime
+from plotly.subplots import make_subplots
+
+def sentiment_pies(since,until,data):
+    df=data[(data.created_at.apply(lambda x: x.date())>=since.date())&\
+            (data.created_at.apply(lambda x: x.date())<=until.date())].copy()
+    all_tweets=[df.groupby(['date','sentiment']).aggregate({'date': 'count'}).unstack().fillna(0).sum()['date',i]\
+              for i in ['positive','neutral','negative']]
+    som_tweets=[df[df['Google_Translation'].isna()].groupby(['date','sentiment']).aggregate({'date': 'count'})\
+                .unstack().fillna(0).sum()['date',i] for i in ['positive','neutral','negative']]
+    eng_tweets=[df[-(df['Google_Translation'].isna())].groupby(['date','sentiment']).aggregate({'date': 'count'})\
+                .unstack().fillna(0).sum()['date',i] for i in ['positive','neutral','negative']]
+    
+    fig = make_subplots(rows=2, cols=2, column_widths=[0.7, 0.3],
+                   specs=[[{"rowspan": 2,"type": "domain"},{"type": "domain"}],
+                           [None,{"type": "domain"}]])
+    fig.add_trace(go.Pie(labels=['Positive','Neutral','Negative'],values=all_tweets,marker_colors=['green','red','yellow'],title="All tweets"), row=1, col=1)
+    fig.add_trace(go.Pie(labels=['Positive','Neutral','Negative'],values=som_tweets,title="Somali tweets"), row=1, col=2)
+    fig.add_trace(go.Pie(labels=['Positive','Neutral','Negative'],values=eng_tweets,title='English tweets'), row=2, col=2)
+
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 10, "b": 0})
+    return fig
+
+
+
+def draw_sentiments(since, until, df, titre):
+    d = df.groupby('date').aggregate({'date': 'count'})
+    d_eng=df[df['Google_Translation'].isna()].groupby(['date','sentiment']).aggregate({'date': 'count'}).unstack()
+    d_som=df[-(df['Google_Translation'].isna())].groupby(['date','sentiment']).aggregate({'date': 'count'}).unstack()
+    # st.write(d)
+    legend, tickes = echelle(since, until)
+    X = [k for k in daterange(since, until)]
+    x = [str(k) for k in daterange(since, until)]
+    y = [d.loc[i].values[0] if i in d.index else 0 for i in x]
+    y_eng_pos= [d_eng[('date', 'positive')].loc[i] if i in d_eng.index else 0 for i in x]
+    y_eng_neg= [d_eng[('date', 'negative')].loc[i] if i in d_eng.index else 0 for i in x]
+    y_eng_neu= [d_eng[('date', 'neutral')].loc[i] if i in d_eng.index else 0 for i in x]
+    y_som_pos= [d_som[('date', 'positive')].loc[i] if i in d_som.index else 0 for i in x]
+    y_som_neg= [d_som[('date', 'negative')].loc[i] if i in d_som.index else 0 for i in x]
+    y_som_neu= [d_som[('date', 'neutral')].loc[i] if i in d_som.index else 0 for i in x]
+    # st.write(y)
+    fig = go.Figure(go.Scatter(name='Total week mean number', x=X, y=moyenne(y), mode='lines'))
+    fig.add_trace(go.Bar(name='Positive in engligh', x=X, y=y_eng_pos,marker_color='darkgreen'))
+    fig.add_trace(go.Bar(name='Positive in somali', x=X, y=y_som_pos,marker_color='forestgreen'))
+    fig.add_trace(go.Bar(name='Neutral in english', x=X, y=y_eng_neu,marker_color='yellow'))
+    fig.add_trace(go.Bar(name='Neutral in somali', x=X, y=y_som_neu,marker_color='khaki'))
+    fig.add_trace(go.Bar(name='Negative in engligh', x=X, y=y_eng_neg,marker_color='red'))
+    fig.add_trace(go.Bar(name='Negative in somali', x=X, y=y_som_neg,marker_color='coral'))
+    fig.update_layout(barmode='stack')
+    
+    # fig.update_layout(autosize=True,legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="center",x=0.5))
+    # fig.update_xaxes(ticktext=legend,tickvals=tickes)
+    fig.update_layout(title=None,
+                      legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=15),
+                                  title=dict(font=dict(size=15))))
+
+    return fig
+
+
+def waterfall(since,until,data,langage):
+    df=data[(data.created_at.apply(lambda x: x.date())>=since.date())&\
+            (data.created_at.apply(lambda x: x.date())<=until.date())].copy()
+    if langage=='Somali':
+        df=df[-(df['Google_Translation'].isna())]
+    elif langage=='English':
+        df=df[df['Google_Translation'].isna()]
+    
+    d=df.groupby(['date','sentiment']).aggregate({'date': 'count'}).unstack().fillna(0)
+    a=d[('date', 'positive')]-d[('date', 'negative')]
+    fig = go.Figure(go.Waterfall(
+        orientation = "v",
+        y = a.values,
+        x = a.index,
+        textposition = "outside",
+        text = [str(i) for i in a.values],
+    
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    fig.update_layout(
+        title = None,
+        showlegend = False
+    )
+    fig.update_layout(margin={"r": 0, "t": 10, "l": 10, "b": 10})
+    return fig
+
+
 
 def draw_numbers(since, until, df, titre):
     d = df.groupby('date').aggregate({'date': 'count'})
@@ -21,7 +107,7 @@ def draw_numbers(since, until, df, titre):
 
     # fig.update_layout(autosize=True,legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="center",x=0.5))
     # fig.update_xaxes(ticktext=legend,tickvals=tickes)
-    fig.update_layout(title=titre,
+    fig.update_layout(title=None,
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=15),
                                   title=dict(font=dict(size=15))))
 
