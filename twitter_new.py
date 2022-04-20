@@ -184,7 +184,7 @@ col2.subheader('Overall sentiment analysis of tweets')
 pies=sentiment_pies(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]),data)
 col2.plotly_chart(pies, use_container_width=True)
 
-col2.subheader('Evolution of number of positive tweets compared to negative tweets')
+col2.subheader('Evolution of number of positive tweets vs negative tweets')
 col2.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 langage=col2.radio("Choose which tweets",('All','English','Somali'))
 
