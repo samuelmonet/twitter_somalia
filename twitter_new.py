@@ -180,7 +180,7 @@ carte1,title1=cartographier(data,level)
 col1.subheader(title1)
 col1.plotly_chart(carte1, use_container_width=True)
 
-col2.subheader('Overall sentiment analysis of tweets')
+col2.subheader('Overall sentiment analysis')
 pies=sentiment_pies(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]),data)
 col2.plotly_chart(pies, use_container_width=True)
 
