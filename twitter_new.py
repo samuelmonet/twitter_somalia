@@ -13,6 +13,25 @@ import re
 import geojson
 from dash_fonctions import *
 import pickle
+import os
+import base64
+
+@st.cache(allow_output_mutation=True)
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+@st.cache(allow_output_mutation=True)
+def get_img_with_href(local_img_path, target_url):
+    img_format = os.path.splitext(local_img_path)[-1].replace('.', '')
+    bin_str = get_base64_of_bin_file(local_img_path)
+    html_code = f'''
+        <a href="{target_url}" target="_blank" >
+            <img src="data:image/{img_format};base64,{bin_str}" />
+        </a>'''
+    return html_code
+
 
 def positions_df(dataframe,level):
 	places = []	
@@ -94,7 +113,12 @@ def cartographier(dataframe,level):
 
 st.set_page_config(layout="wide")
 
+axiom_html = get_img_with_href('logoAxiom.png', 'https://axiom.co.ke')
+
+st.sidebar.markdown(axiom_html, unsafe_allow_html=True)
 st.sidebar.title('Analysis of Tweets in Somalia')
+
+
 
 with st.sidebar:
     choose = option_menu(None, ["Elections", "Drought",'Security Incidents','Displacements'],
@@ -102,37 +126,37 @@ with st.sidebar:
                          menu_icon="app-indicator", default_index=0,
                         )
 
-st.sidebar.title(choose)
-
 a,b=st.columns((3,1))
 
 if choose == "Elections":
-    st.sidebar.title('Elections')
+    date_begin='25th of March 2022'
     data = pd.read_csv('Elections.csv', sep='\t')
     a.title('Tweets related to elections')
-    a.caption('Gather all tweets since the 25th of March which include either the word "doorashooyinka" referred to as Somali tweets or the words "election" and "somalia" referred to as english tweets')
+    a.caption('Gather all tweets which include either the word "doorashooyinka" referred to as Somali tweets or the words "election" and "somalia" referred to as english tweets')
 elif choose=='Drought':
-    st.sidebar.title("Drought")
+    date_begin='25th of March 2022'
     data = pd.read_csv('Drought.csv', sep='\t')
     a.title('Tweets related to drought')
-    a.caption('Gather all tweets since the 25th of March which include either the word "abaaro" referred to as Somali tweets or the words "drought" and "somalia" referred to as english tweets')
+    a.caption('Gather all tweets which include either the word "abaaro" referred to as Somali tweets or the words "drought" and "somalia" referred to as english tweets')
 elif choose=='Displacements':
-    st.sidebar.title("Displacements")
+    date_begin='31st of March 2022'
     data = pd.read_csv('Displacements.csv', sep='\t')
     a.title('Tweets related to displacements')
-    a.caption('Gather all tweets since the 25th of March which include either at least one of the words "barakacyaal", "qaxooti" or "barakacayaasha" referred to as Somali tweets or the words "somali" AND one of the words "idp", "refugee", "displaced" referred to as english tweets')
+    a.caption('Gather all tweets which include either at least one of the words "barakacyaal", "qaxooti" or "barakacayaasha" referred to as Somali tweets or the words "somali" AND one of the words "idp", "refugee", "displaced" referred to as english tweets')
 else:
-    st.sidebar.title("Security incidents")
+    date_begin='31st of March 2022'
     data = pd.read_csv('Attacks.csv', sep='\t')
     a.title('Tweets related to security incidents')
-    a.caption('Gather all tweets since the 25th of March which include either at least one of the words "weerar", "qarax","dagaal" or "colaad" referred to as Somali tweets or the words "somalia" AND one of the words "attack", "conflict", "fighting", "explosion" or "bombing" referred to as english tweets')
+    a.caption('Gather all tweets which include either at least one of the words "weerar", "qarax","dagaal" or "colaad" referred to as Somali tweets or the words "somalia" AND one of the words "attack", "conflict", "fighting", "explosion" or "bombing" referred to as english tweets')
 
 
 data['date'] = data['created_at'].apply(lambda x: x[:10])
 data['date'] = data['date'].apply(lambda x: pd.to_datetime(x))
 data['created_at']=data['created_at'].apply(lambda x: pd.to_datetime(x))
 
+
 b.title(str(len(data))+ ' tweets')
+b.write('since the '+date_begin)
 
 col1,col2=st.columns((1,1))
 
@@ -144,26 +168,30 @@ numbers_sentiment=draw_sentiments(pd.to_datetime("2022-03-25"), pd.to_datetime(s
 col1.plotly_chart(numbers, use_container_width=True)
 col2.plotly_chart(numbers_sentiment, use_container_width=True)
 
-level = st.sidebar.selectbox('Choose the level of visualization:', ['Village', 'District', 'Region']).lower()
 
 for i in ['village','district','region']:
     data[i] = data[i].apply(lambda x : eval(x))
 
-carte1,title1=cartographier(data,level)
 
 col1,col2=st.columns((7,5))
-
+col1.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
+level = col1.radio('Select the level of visualization:', ('Village', 'District', 'Region')).lower()
+carte1,title1=cartographier(data,level)
 col1.subheader(title1)
 col1.plotly_chart(carte1, use_container_width=True)
+
 col2.subheader('Overall sentiment analysis of tweets')
 pies=sentiment_pies(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]),data)
 col2.plotly_chart(pies, use_container_width=True)
 
 col2.subheader('Evolution of number of positive tweets compared to negative tweets')
+col2.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 langage=col2.radio("Choose which tweets",('All','English','Somali'))
 
 waterf=waterfall(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]),data,langage)
 col2.plotly_chart(waterf, use_container_width=True)
+
+st.markdown('---')
 
 if st.checkbox('Select time range and/or specific locations'):
 
