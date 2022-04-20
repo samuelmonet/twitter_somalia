@@ -165,6 +165,7 @@ numbers = draw_numbers(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime
 numbers_sentiment=draw_sentiments(pd.to_datetime("2022-03-25"), pd.to_datetime(str(datetime.datetime.today()).split()[0]), data,
                        'Tweets per day according to sentiment analysis')                       
 
+
 col1.plotly_chart(numbers, use_container_width=True)
 col2.plotly_chart(numbers_sentiment, use_container_width=True)
 

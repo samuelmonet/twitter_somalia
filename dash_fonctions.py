@@ -55,7 +55,8 @@ def draw_sentiments(since, until, df, titre):
     fig.update_layout(title=None,
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=15),
                                   title=dict(font=dict(size=15))))
-
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    
     return fig
 
 
@@ -110,7 +111,7 @@ def draw_numbers(since, until, df, titre):
     fig.update_layout(title=None,
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=15),
                                   title=dict(font=dict(size=15))))
-
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
 
 
